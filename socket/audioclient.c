@@ -33,6 +33,8 @@ int main(int args, char** argv){
     char *file_name = argv[2]; //nom du fichier
     char *filter_param = argv[3]; //filtre appliqué (facultatif)
 
+    int volumeFilter;
+
     if (file_name == NULL || server_host_name==NULL) { //si il n'y a pas assez d'arguments on ne lance pas le client
         perror("Fatal error ! Not Enough Arguments !");
         return -1;
@@ -80,8 +82,9 @@ int main(int args, char** argv){
             printf("File forced to mono");
             buf.channels = 1;
         }
-        else if(strcmp(filter_param, "")==0){
 
+        else if(strcmp(filter_param, "volume")==0){
+            volumeFilter = 1;
         }
         else { //le filtre est inconnu, on termine la communication avec le serveur
             perror("Fatal error ! Filtre inconnu !");
@@ -105,6 +108,19 @@ int main(int args, char** argv){
     }
     do { //protocole de transmission des échantillons côté client 
         receiveData = recvfrom(socketClient, &buffer, sizeof(buffer), 0, (struct sockaddr*) &from, &fromlen); //réception d'un échantillon
+
+        if(volumeFilter == 1) {
+            for(int i=0; i<buf.sp_size; i++){
+                if(buf.sp_size == 8) {
+                    int8_t tmp = buffer[i]*4;
+                    buffer[i] = tmp;
+                }
+                else if (buf.sp_size == 16){
+                    int16_t tmp = buffer[i]*4;
+                    buffer[i] = tmp;
+                }
+            }
+        }
         
         if(receiveData < 0 ){
             perror("Fatal error ! Receiving");
