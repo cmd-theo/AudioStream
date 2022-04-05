@@ -110,18 +110,22 @@ int main(int args, char** argv){
         receiveData = recvfrom(socketClient, &buffer, sizeof(buffer), 0, (struct sockaddr*) &from, &fromlen); //réception d'un échantillon
 
         if(volumeFilter == 1) {
-            if(buf.sp_size == 8){
-                for(int i=0; i<buf.sp_size; i++){
+            int16_t *tmp = 0;
+            if(buf.sp_size == 16){
+                for(int i=0; i<buf.sp_size; i+=2){
                     int16_t tmp = buffer[i]*4;
                     buffer[i] = tmp;
                 }
             }
-            else if(buf.sp_size == 16){
-                for(int i=0; i<buf.sp_size-1; i+=2){
-                    int16_t tmp = buffer[i]*4;
-                    buffer[i] = tmp;
+            /*else if(buf.sp_size == 16){
+                int i=0;
+                while(i<16){
+                    *tmp = buffer[i];
+                    //*tmp = *tmp *4;
+                    //buffer[i] = *tmp;
+                    i++;
                 }
-            } 
+            }*/ 
         }
         
         if(receiveData < 0 ){
