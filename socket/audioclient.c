@@ -32,6 +32,7 @@ int main(int args, char** argv){
     char *server_host_name = argv[1]; //adresse IP ou nom de domaine du serveur
     char *file_name = argv[2]; //nom du fichier
     char *filter_param = argv[3]; //filtre appliqué (facultatif)
+    char *filter_param_number = argv[4]; //constante à appliquer (si vide mise à 2 pour jouer deux fois plus vite)
 
     int volumeFilter;
 
@@ -76,7 +77,12 @@ int main(int args, char** argv){
 
     if(filter_param != NULL){
         if(strcmp(filter_param, "speed")==0) { //on applique le filtre "speed" en mulitpliant la fréquence d'échantillonage par 2
-            buf.sp_rate = buf.sp_rate*2;
+            if(filter_param_number==NULL){
+                buf.sp_rate = buf.sp_rate * 2;
+            }
+            else{
+                buf.sp_rate = buf.sp_rate * atoi(filter_param_number);
+            }
         }
         else if(strcmp(filter_param, "mono")==0){ //on applique le filtre "mono" qui force l'écriture des echantillons en mono 
             printf("File forced to mono");
@@ -110,22 +116,17 @@ int main(int args, char** argv){
         receiveData = recvfrom(socketClient, &buffer, sizeof(buffer), 0, (struct sockaddr*) &from, &fromlen); //réception d'un échantillon
 
         if(volumeFilter == 1) {
-            int16_t *tmp = 0;
-            if(buf.sp_size == 16){
-                for(int i=0; i<buf.sp_size; i+=2){
-                    int16_t tmp = buffer[i]*4;
+            int16_t *temp=0;
+            for(int i=0; i<buf.sp_size; i++){
+                if(buf.sp_size == 8) {
+                    int8_t tmp = buffer[i]*4;
+                    buffer[i] = tmp;
+                }
+                else if (buf.sp_size == 16){
+                    *temp=buffer[i]; //lire en déréférençant temp
                     buffer[i] = tmp;
                 }
             }
-            /*else if(buf.sp_size == 16){
-                int i=0;
-                while(i<16){
-                    *tmp = buffer[i];
-                    //*tmp = *tmp *4;
-                    //buffer[i] = *tmp;
-                    i++;
-                }
-            }*/ 
         }
         
         if(receiveData < 0 ){
