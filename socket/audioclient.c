@@ -150,7 +150,8 @@ int main(int args, char** argv){
                 else {*/
                     int8_t tmp = buffer[i] + buffercpy[i];
                     final[i] = tmp;
-                //}
+                //} 
+                
             }
             int statut_write_echo = write(statut_write_init, final, buf.sp_size*2); //écriture de l'échantillon pour être joué sur le haut-parleur 
             if(statut_write_echo<0){
