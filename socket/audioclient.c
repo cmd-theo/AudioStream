@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -148,22 +150,25 @@ int main(int args, char** argv){
                     final[i] = buffer[i];
                 }
                 else {*/
-                    int8_t tmp = buffer[i] + buffercpy[i];
+                    int16_t tmp = buffer[i] + buffercpy[i];
                     final[i] = tmp;
-                //} 
-                
+                //}
+
             }
+            printf("Echo");
             int statut_write_echo = write(statut_write_init, final, buf.sp_size*2); //écriture de l'échantillon pour être joué sur le haut-parleur 
             if(statut_write_echo<0){
                 perror("Fatal error ! Write");
             }
+
         }
-        /*if(echoFilter==0){
+        else {
+            printf("Pas Echo");
             int statut_write = write(statut_write_init, buffer, buf.sp_size); //écriture de l'échantillon pour être joué sur le haut-parleur 
             if(statut_write<0){
                 perror("Fatal error ! Write");
             }
-        }*/
+        }
 
         sendAck = sendto(socketClient, &ack, sizeof(ack), 0, 
                            (struct sockaddr*) &dest, sizeof(struct sockaddr_in)); //envoi de l'acquittement informant le serveur qu'il peut transmettre le prochain échantillon
