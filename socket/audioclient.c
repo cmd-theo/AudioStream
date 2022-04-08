@@ -34,7 +34,7 @@ int main(int args, char** argv){
     char *filter_param = argv[3]; //filtre appliqué (facultatif)
     char *filter_param_number = argv[4]; //constante à appliquer (si vide mise à 2 pour jouer deux fois plus vite)
 
-    int volumeFilter;
+    int volumeFilter, echoFilter = 0;
 
     if (file_name == NULL || server_host_name==NULL) { //si il n'y a pas assez d'arguments on ne lance pas le client
         perror("Fatal error ! Not Enough Arguments !");
@@ -85,12 +85,16 @@ int main(int args, char** argv){
             }
         }
         else if(strcmp(filter_param, "mono")==0){ //on applique le filtre "mono" qui force l'écriture des echantillons en mono 
-            printf("File forced to mono");
+            printf("File forced to mono\n");
             buf.channels = 1;
         }
 
         else if(strcmp(filter_param, "volume")==0){
             volumeFilter = 1;
+        }
+
+        else if(strcmp(filter_param, "echo")==0){
+            echoFilter = 1;
         }
         else { //le filtre est inconnu, on termine la communication avec le serveur
             perror("Fatal error ! Filtre inconnu !");
@@ -105,6 +109,8 @@ int main(int args, char** argv){
     }
 
     char buffer[buf.sp_size]; //buffer de lecture et d'écriture des échantillons de la taille des échantillons du fichier 
+    char buffercpy[buf.sp_size];
+    char final[buf.sp_size*2];
     const char *ack = "Ack";
     socklen_t receiveData;
     int sendAck = sendto(socketClient, &ack, sizeof(ack), 0, 
@@ -116,7 +122,6 @@ int main(int args, char** argv){
         receiveData = recvfrom(socketClient, &buffer, sizeof(buffer), 0, (struct sockaddr*) &from, &fromlen); //réception d'un échantillon
 
         if(volumeFilter == 1) {
-            int16_t *temp=0;
             for(int i=0; i<buf.sp_size; i++){
                 if(buf.sp_size == 8) {
                     int8_t tmp = buffer[i]*4;
@@ -132,10 +137,32 @@ int main(int args, char** argv){
         if(receiveData < 0 ){
             perror("Fatal error ! Receiving");
         }
-        int statut_write = write(statut_write_init, buffer, buf.sp_size); //écriture de l'échantillon pour être joué sur le haut-parleur 
-        if(statut_write<0){
-            perror("Fatal error ! Write");
+
+        if(echoFilter == 1){
+            memcpy(buffercpy, buffer, sizeof(buffer));
+            for(int i=0; i<buf.sp_size*2; i++){
+                /*if(i<buf.sp_size-3){
+                    final[i] = buffer[i];
+                }
+                if(i>buf.sp_size+3){
+                    final[i] = buffer[i];
+                }
+                else {*/
+                    int8_t tmp = buffer[i] + buffercpy[i];
+                    final[i] = tmp;
+                //}
+            }
+            int statut_write_echo = write(statut_write_init, final, buf.sp_size*2); //écriture de l'échantillon pour être joué sur le haut-parleur 
+            if(statut_write_echo<0){
+                perror("Fatal error ! Write");
+            }
         }
+        /*if(echoFilter==0){
+            int statut_write = write(statut_write_init, buffer, buf.sp_size); //écriture de l'échantillon pour être joué sur le haut-parleur 
+            if(statut_write<0){
+                perror("Fatal error ! Write");
+            }
+        }*/
 
         sendAck = sendto(socketClient, &ack, sizeof(ack), 0, 
                            (struct sockaddr*) &dest, sizeof(struct sockaddr_in)); //envoi de l'acquittement informant le serveur qu'il peut transmettre le prochain échantillon
