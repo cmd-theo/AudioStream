@@ -123,7 +123,7 @@ int main(int args, char** argv){
                     buffer[i] = tmp;
                 }
                 else if (buf.sp_size == 16){
-                    *temp=buffer[i]; //lire en déréférençant temp
+                    int16_t tmp = buffer[i]*4;
                     buffer[i] = tmp;
                 }
             }
