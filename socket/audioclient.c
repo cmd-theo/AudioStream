@@ -34,7 +34,7 @@ int main(int args, char** argv){
     char *server_host_name = argv[1]; //adresse IP ou nom de domaine du serveur
     char *file_name = argv[2]; //nom du fichier
     char *filter_param = argv[3]; //filtre appliqué (facultatif)
-    char *filter_param_number = argv[4]; //constante à appliquer (si vide mise à 2 pour jouer deux fois plus vite)
+    char *filter_param_number = argv[4]; //constante à appliquer (facultative, et si vide, mise à 2 pour jouer deux fois plus vite)
 
     int volumeFilter, echoFilter = 0;
 
@@ -70,7 +70,7 @@ int main(int args, char** argv){
     if(receiveHeader < 0 ){
        perror("Fatal error ! Receiving");
     }
-    if(buf.channels < 1 || buf.channels > 2 ){
+    if(buf.channels < 1 || buf.channels > 2 ){ //si le serveur renvoi un paquet à un client qui contient des valeurs différentes de 1 et 2 pour le champ "channels" alors on sait que le serveur est en cours de transmission
         perror("Fatal Error ! Server already in use !");
         return -1;
     }
@@ -78,12 +78,12 @@ int main(int args, char** argv){
                 inet_ntoa(from.sin_addr), ntohs(from.sin_port), buf.sp_rate, buf.sp_size, buf.channels);
 
     if(filter_param != NULL){
-        if(strcmp(filter_param, "speed")==0) { //on applique le filtre "speed" en mulitpliant la fréquence d'échantillonage par 2
+        if(strcmp(filter_param, "speed")==0) { //on applique le filtre "speed" 
             if(filter_param_number==NULL){
-                buf.sp_rate = buf.sp_rate * 2;
+                buf.sp_rate = buf.sp_rate * 2; //si l'utilisateur n'a pas mis de constante on mulitplie la fréquence d'échantillonage par 2 par défaut
             }
             else{
-                buf.sp_rate = buf.sp_rate * atoi(filter_param_number);
+                buf.sp_rate = buf.sp_rate * atoi(filter_param_number); //on multiplie la fréquence d'échantillonage par la constante indiquée par l'utilisateur
             }
         }
         else if(strcmp(filter_param, "mono")==0){ //on applique le filtre "mono" qui force l'écriture des echantillons en mono 
@@ -91,13 +91,10 @@ int main(int args, char** argv){
             buf.channels = 1;
         }
 
-        else if(strcmp(filter_param, "volume")==0){
+        else if(strcmp(filter_param, "volume")==0){ //on applique le filtre "volume" qui augmente le volume du fichier demandé 
             volumeFilter = 1;
         }
 
-        else if(strcmp(filter_param, "echo")==0){
-            echoFilter = 1;
-        }
         else { //le filtre est inconnu, on termine la communication avec le serveur
             perror("Fatal error ! Filtre inconnu !");
             return -1;
@@ -123,13 +120,13 @@ int main(int args, char** argv){
     do { //protocole de transmission des échantillons côté client 
         receiveData = recvfrom(socketClient, &buffer, sizeof(buffer), 0, (struct sockaddr*) &from, &fromlen); //réception d'un échantillon
 
-        if(volumeFilter == 1) {
+        if(volumeFilter == 1) { //l'utilisateur a demandé l'utilisation du filtre "volume" 
             for(int i=0; i<buf.sp_size; i++){
-                if(buf.sp_size == 8) {
-                    int8_t tmp = buffer[i]*4;
+                if(buf.sp_size == 8) {  //le fichier est en mono 
+                    int8_t tmp = buffer[i]*4; //on multiplie les échantillions par une constante (ici 4)
                     buffer[i] = tmp;
                 }
-                else if (buf.sp_size == 16){
+                else if (buf.sp_size == 16){ //le fichier est en stéréo
                     int16_t tmp = buffer[i]*4;
                     buffer[i] = tmp;
                 }
@@ -140,34 +137,9 @@ int main(int args, char** argv){
             perror("Fatal error ! Receiving");
         }
 
-        if(echoFilter == 1){
-            memcpy(buffercpy, buffer, sizeof(buffer));
-            for(int i=0; i<buf.sp_size*2; i++){
-                /*if(i<buf.sp_size-3){
-                    final[i] = buffer[i];
-                }
-                if(i>buf.sp_size+3){
-                    final[i] = buffer[i];
-                }
-                elseefeffgrefeef {*/
-                    int16_t tmp = buffer[i] + buffercpy[i];
-                    final[i] = tmp;
-                //}
-
-            }
-            printf("Echo");
-            int statut_write_echo = write(statut_write_init, final, buf.sp_size*2); //écriture de l'échantillon pour être joué sur le haut-parleur 
-            if(statut_write_echo<0){
-                perror("Fatal error ! Write");
-            }
-
-        }
-        else {
-            printf("Pas Echo");
-            int statut_write = write(statut_write_init, buffer, buf.sp_size); //écriture de l'échantillon pour être joué sur le haut-parleur 
-            if(statut_write<0){
-                perror("Fatal error ! Write");
-            }
+        int statut_write = write(statut_write_init, buffer, buf.sp_size); //écriture de l'échantillon pour être joué sur le haut-parleur 
+        if(statut_write<0){
+            perror("Fatal error ! Write");
         }
 
         sendAck = sendto(socketClient, &ack, sizeof(ack), 0, 
