@@ -36,7 +36,7 @@ int main(int args, char** argv){
     char *filter_param = argv[3]; //filtre appliqué (facultatif)
     char *filter_param_number = argv[4]; //constante à appliquer (facultative, et si vide, mise à 2 pour jouer deux fois plus vite)
 
-    int volumeFilter, echoFilter = 0;
+    int volumeFilter=0;
 
     if (file_name == NULL || server_host_name==NULL) { //si il n'y a pas assez d'arguments on ne lance pas le client
         perror("Fatal error ! Not Enough Arguments !");
@@ -108,8 +108,6 @@ int main(int args, char** argv){
     }
 
     char buffer[buf.sp_size]; //buffer de lecture et d'écriture des échantillons de la taille des échantillons du fichier 
-    char buffercpy[buf.sp_size];
-    char final[buf.sp_size*2];
     const char *ack = "Ack";
     socklen_t receiveData;
     int sendAck = sendto(socketClient, &ack, sizeof(ack), 0, 
