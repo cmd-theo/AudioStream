@@ -149,7 +149,7 @@ int main(int args, char** argv){
                 if(i>buf.sp_size+3){
                     final[i] = buffer[i];
                 }
-                else {*/
+                elseefeffgrefeef {*/
                     int16_t tmp = buffer[i] + buffercpy[i];
                     final[i] = tmp;
                 //}
